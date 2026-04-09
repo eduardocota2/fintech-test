@@ -1,0 +1,12 @@
+from functools import lru_cache
+
+from pydantic import BaseModel
+
+class Settings(BaseModel):
+    app_name: str = "Validador de Crédito Fintech"
+    version: str = "1.0.0"
+    api_v1_prefix: str = "/api/v1"
+
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()
