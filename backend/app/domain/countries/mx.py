@@ -15,7 +15,7 @@ class MexicoRuleService(CountryRuleService):
             )
         
         # TODO: Desarrollar mejor la lógica de validación.
-        ratio = context.amount_requested / max(context.monthly_income, 1)  # Avoid division by zero
+        ratio = context.amount_requested / max(context.monthly_income, 1)
         needs_manual_review = ratio > 6
         return CountryResult(
             is_valid=True, 
