@@ -7,7 +7,7 @@ from sqlalchemy import Date, DateTime, Enum, ForeignKey, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-from backend.app.db.utils.enums import ApplicationStatus, CountryCode
+from app.db.utils.enums import ApplicationStatus, CountryCode
 
 
 class LoanApplication(Base):

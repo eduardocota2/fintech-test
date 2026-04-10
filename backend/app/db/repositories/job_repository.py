@@ -3,8 +3,8 @@ from datetime import datetime
 from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 
-from backend.app.db.utils.enums import JobStatus
-from backend.app.db.models.job_queue import JobQueue
+from app.db.utils.enums import JobStatus
+from app.db.models.job_queue import JobQueue
 
 
 class JobRepository:

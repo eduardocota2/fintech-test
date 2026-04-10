@@ -7,7 +7,7 @@ from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, func, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-from backend.app.db.utils.enums import JobStatus, JobType
+from app.db.utils.enums import JobStatus, JobType
 
 class JobQueue(Base):
     __tablename__ = "job_queue"

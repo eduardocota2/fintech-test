@@ -1,7 +1,8 @@
 from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 
-from backend.app.db.models.loan_application import LoanApplication
+from app.db.models.loan_application import LoanApplication
+from app.db.utils.enums import ApplicationStatus, CountryCode
 
 class LoanRepository:
     def __init__(self, session: Session):
@@ -17,8 +18,8 @@ class LoanRepository:
     def list_by_filters(
             self,
             *,
-            country: str | None = None,
-            status: str | None = None,
+            country: CountryCode | None = None,
+            status: ApplicationStatus | None = None,
     ) -> list[LoanApplication]:
         stmt: Select[tuple[LoanApplication]] = select(LoanApplication)
 
