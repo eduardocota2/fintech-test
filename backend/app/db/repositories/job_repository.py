@@ -36,3 +36,20 @@ class JobRepository:
         job.status = JobStatus.FAILED
         job.error_message = error_message
         job.tries += 1
+
+    def claim_next_pending(self) -> JobQueue | None:
+        stmt: Select[tuple[JobQueue]] = (
+            select(JobQueue)
+            .where(JobQueue.status == JobStatus.PENDING)
+            .order_by(JobQueue.created_at.asc())
+            .limit(1)
+        )
+
+        job = self.session.scalars(stmt).first()
+
+        if job is None:
+            return None
+        
+        self.mark_in_progress(job)
+
+        return job

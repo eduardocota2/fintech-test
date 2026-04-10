@@ -17,6 +17,7 @@ class JobQueue(Base):
     job_type: Mapped[JobType] = mapped_column(Enum(JobType, name="job_type"), nullable=False)
     status: Mapped[JobStatus] = mapped_column(Enum(JobStatus, name="job_status"), nullable=False, default=JobStatus.PENDING)
     payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    error_message: Mapped[str | None] = mapped_column(String(500), nullable=True)
     tries: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     max_retries: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
