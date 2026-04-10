@@ -1,5 +1,5 @@
 class ServiceError(Exception):
-    """Base application service error."""
+    pass
 
 
 class NotFoundError(ServiceError):
