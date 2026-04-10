@@ -5,8 +5,10 @@ from app.domain.countries.registry import get_country_rule_service
 from app.integrations.banking.base import NormalizedBankProfile
 from app.integrations.banking.registry import get_banking_provider
 from app.db.models.loan_application import LoanApplication
+from app.db.models.audit_log import AuditLog
+from app.db.models.job_queue import JobQueue
 from app.db.unit_of_work import SqlAlchemyUnitOfWork
-from app.db.utils.enums import ApplicationStatus, CountryCode
+from app.db.utils.enums import ApplicationStatus, CountryCode, JobType
 from app.services.errors import ForbiddenError, NotFoundError
 
 @dataclass(frozen=True)
@@ -80,6 +82,32 @@ class ApplicationService:
             )
             uow.loans.add(loan)
             uow.session.flush()
+
+            uow.jobs.add(
+                JobQueue(
+                    loan_application_id=loan.id,
+                    job_type=JobType.RISK_EVALUATION,
+                    payload={
+                        "application_id": loan.id,
+                        "is_valid": evaluation_result.rules.is_valid,
+                        "needs_manual_review": evaluation_result.rules.needs_manual_review,
+                        "reason": evaluation_result.rules.reason,
+                    },
+                )
+            )
+
+            uow.audit_logs.add(
+                AuditLog(
+                    loan_application_id=loan.id,
+                    action="application_created",
+                    details={
+                        "status": loan.status.value,
+                        "country": loan.country.value,
+                        "user_id": loan.user_id,
+                    },
+                )
+            )
+
             uow.session.refresh(loan)
             return loan
         
@@ -115,13 +143,39 @@ class ApplicationService:
         application_id: str,
         new_status: ApplicationStatus,
     ) -> LoanApplication:
-        with SqlAlchemyUnitOfWork() as uow:          
+        with SqlAlchemyUnitOfWork() as uow:
+            if uow.loans is None or uow.jobs is None or uow.audit_logs is None or uow.session is None:
+                raise RuntimeError("Repository unavailable")
 
             loan = uow.loans.get_by_id(application_id)
             if loan is None:
-                raise NotFoundError("La solicitud de préstamo no existe")
+                raise NotFoundError("Application not found")
 
             loan.status = new_status
+
+            uow.audit_logs.add(
+                AuditLog(
+                    loan_application_id=loan.id,
+                    action="status_updated_manual",
+                    details={
+                        "status": loan.status.value,
+                        "user_id": loan.user_id,
+                    },
+                )
+            )
+
+            uow.jobs.add(
+                JobQueue(
+                    loan_application_id=loan.id,
+                    job_type=JobType.WEBHOOK_NOTIFICATION,
+                    payload={
+                        "application_id": loan.id,
+                        "status": loan.status.value,
+                        "country": loan.country.value,
+                    },
+                )
+            )
+
             uow.session.flush()
             uow.session.refresh(loan)
             return loan

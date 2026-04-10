@@ -58,6 +58,23 @@ def create_application(payload: LoanCreateRequest, current_user: User = Depends(
 
     return _to_loan_response(loan)
 
+@router.patch("/{application_id}/status", response_model=LoanResponse)
+def update_application_status(
+    application_id: str,
+    payload: LoanStatusUpdateRequest,
+    _: User = Depends(get_current_admin),
+) -> LoanResponse:
+    service = ApplicationService()
+    try:
+        loan = service.update_application_status(
+            application_id=application_id,
+            new_status=payload.status,
+        )
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    return _to_loan_response(loan)
+
 
 @router.get("/{application_id}", response_model=LoanResponse)
 def get_application(application_id: str, current_user: User = Depends(get_current_user)) -> LoanResponse:
