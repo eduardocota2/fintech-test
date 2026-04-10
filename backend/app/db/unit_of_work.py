@@ -3,7 +3,10 @@ from types import TracebackType
 
 from sqlalchemy.orm import Session
 
-from app.db.repositories import AuditRepository, JobRepository, LoanRepository, UserRepository
+from app.db.repositories.audit_repository import AuditRepository
+from app.db.repositories.loan_repository import LoanRepository
+from app.db.repositories.user_repository import UserRepository
+from app.db.repositories.job_repository import JobRepository
 from app.db.session import SessionLocal
 
 

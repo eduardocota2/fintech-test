@@ -13,7 +13,7 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
-class UserPublicResponse(BaseModel):
+class UserPublic(BaseModel):
     id: str
     email: EmailStr
     is_admin: bool
