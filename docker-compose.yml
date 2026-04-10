@@ -1,0 +1,98 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fintech_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-fintech}
+    ports:
+      - "${POSTGRES_PORT:-5434}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-fintech}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fintech_migrate
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-fintech}
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fintech_api
+    environment:
+      APP_NAME: ${APP_NAME:-Fintech Backend}
+      APP_VERSION: ${APP_VERSION:-1.0.0}
+      API_V1_PREFIX: ${API_V1_PREFIX:-/api/v1}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-env}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-60}
+      WEBHOOK_TIMEOUT_SECONDS: ${WEBHOOK_TIMEOUT_SECONDS:-5.0}
+      WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-1.0}
+      SSE_POLL_SECONDS: ${SSE_POLL_SECONDS:-1.0}
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/fintech
+      WEBHOOK_TARGET_URL: http://api:8000/api/v1/webhooks/mock-receiver
+    command: ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "${API_PORT:-8001}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fintech_worker
+    environment:
+      APP_NAME: ${APP_NAME:-Fintech Backend}
+      APP_VERSION: ${APP_VERSION:-1.0.0}
+      API_V1_PREFIX: ${API_V1_PREFIX:-/api/v1}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-env}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-60}
+      WEBHOOK_TIMEOUT_SECONDS: ${WEBHOOK_TIMEOUT_SECONDS:-5.0}
+      WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-1.0}
+      SSE_POLL_SECONDS: ${SSE_POLL_SECONDS:-1.0}
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/fintech
+      WEBHOOK_TARGET_URL: http://api:8000/api/v1/webhooks/mock-receiver
+    command: ["python", "-m", "app.workers.loan_worker"]
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      api:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fintech_frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      api:
+        condition: service_started
+
+volumes:
+  postgres_data:
