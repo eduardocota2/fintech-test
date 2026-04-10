@@ -74,6 +74,7 @@ services:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/fintech
       WEBHOOK_TARGET_URL: http://api:8000/api/v1/webhooks/mock-receiver
     command: ["python", "-m", "app.workers.loan_worker"]
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
