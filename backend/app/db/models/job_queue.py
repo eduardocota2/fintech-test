@@ -24,4 +24,4 @@ class JobQueue(Base):
     executed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    loan_application_id = relationship("LoanApplication", back_populates="jobs")
+    loan_application = relationship("LoanApplication", back_populates="jobs")

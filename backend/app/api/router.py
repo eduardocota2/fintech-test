@@ -6,6 +6,6 @@ from app.api.routes.applications import router as applications_router
 
 api_router = APIRouter()
 
-api_router.include_router(health_router, prefix="/health")
-api_router.include_router(auth_router, prefix="/auth")
-api_router.include_router(applications_router, prefix="/applications")
+api_router.include_router(health_router)
+api_router.include_router(auth_router)
+api_router.include_router(applications_router)

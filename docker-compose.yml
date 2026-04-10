@@ -45,11 +45,11 @@ services:
       WEBHOOK_TIMEOUT_SECONDS: ${WEBHOOK_TIMEOUT_SECONDS:-5.0}
       WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-1.0}
       SSE_POLL_SECONDS: ${SSE_POLL_SECONDS:-1.0}
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:${POSTGRES_PORT:-5434}/${POSTGRES_DB:-fintech}
-      WEBHOOK_TARGET_URL: http://api:${API_PORT:-8000}/api/v1/webhooks/mock-receiver
-    command: ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "${API_PORT:-8000}"]
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/fintech
+      WEBHOOK_TARGET_URL: http://api:8000/api/v1/webhooks/mock-receiver
+    command: ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
     ports:
-      - "${API_PORT:-8000}:${API_PORT:-8000}"
+      - "${API_PORT:-8001}:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -71,8 +71,8 @@ services:
       WEBHOOK_TIMEOUT_SECONDS: ${WEBHOOK_TIMEOUT_SECONDS:-5.0}
       WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-1.0}
       SSE_POLL_SECONDS: ${SSE_POLL_SECONDS:-1.0}
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:${POSTGRES_PORT:-5434}/${POSTGRES_DB:-fintech}
-      WEBHOOK_TARGET_URL: http://api:${API_PORT:-8000}/api/v1/webhooks/mock-receiver
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/fintech
+      WEBHOOK_TARGET_URL: http://api:8000/api/v1/webhooks/mock-receiver
     command: ["python", "-m", "app.workers.loan_worker"]
     depends_on:
       postgres:
