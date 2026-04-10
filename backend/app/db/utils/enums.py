@@ -5,17 +5,17 @@ class CountryCode(str, Enum):
     CO = 'CO'
 
 class ApplicationStatus(str, Enum):
-    SUBMITTED = 'SUBMITTED'
-    PENDING = 'PENDING'
-    APPROVED = 'APPROVED'
-    REJECTED = 'REJECTED'
+    SUBMITTED = 'submitted'
+    EVALUATING = 'evaluating'
+    APPROVED = 'approved'
+    REJECTED = 'rejected'
 
 class JobType(str, Enum):
     RISK_EVALUATION = 'risk_evaluation'
     WEBHOOK_NOTIFICATION = 'webhook_notification'
 
 class JobStatus(str, Enum):
-    PENDING = 'PENDING'
-    IN_PROGRESS = 'IN_PROGRESS'
-    COMPLETED = 'COMPLETED'
-    FAILED = 'FAILED'
+    PENDING = 'pending'
+    IN_PROGRESS = 'in_progress'
+    COMPLETED = 'completed'
+    FAILED = 'failed'
