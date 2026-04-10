@@ -11,7 +11,7 @@ def create_app() -> FastAPI:
 
     app = FastAPI(
         title=settings.app_name,
-        version=settings.version,
+        version=settings.app_version,
         docs_url="/docs",
         redoc_url="/redoc",
     )

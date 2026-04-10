@@ -25,7 +25,7 @@ class Settings(BaseModel):
     app_name: str = os.getenv("APP_NAME", "Fintech Test")
     app_version: str = os.getenv("APP_VERSION", "1.0.0")
     api_v1_prefix: str = os.getenv("API_PREFIX", "/api/v1")
-    database_url: str = os.getenv("DATABASE_URL", "postgresql+psycopg://postgres:postgres@localhost:5432/bravo")
+    database_url: str = os.getenv("DATABASE_URL", "postgresql+psycopg://postgres:postgres@localhost:5434/fintech")
     jwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "my_secret_key")
     jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
     jwt_expire_minutes: int = int(os.getenv("JWT_EXPIRE_MINUTES", "60"))
