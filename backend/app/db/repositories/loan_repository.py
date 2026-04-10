@@ -8,7 +8,7 @@ class LoanRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    def create(self, loan_application: LoanApplication) -> LoanApplication | None:
+    def add(self, loan_application: LoanApplication) -> LoanApplication | None:
         self.session.add(loan_application)
         return loan_application
 

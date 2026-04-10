@@ -26,7 +26,7 @@ class AuthService:
                 password_hash=hash_password(password),
                 is_admin=is_admin,
             )
-            uow.users.create(user)
+            uow.users.add(user)
             uow.session.flush()
             return user
 

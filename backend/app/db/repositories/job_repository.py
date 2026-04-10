@@ -11,7 +11,7 @@ class JobRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    def create(self, job: JobQueue) -> JobQueue:
+    def add(self, job: JobQueue) -> JobQueue:
         self.session.add(job)
         return job
     

@@ -78,7 +78,7 @@ class ApplicationService:
                 bank_name=evaluation_result.bank_profile.bank_name,
                 bank_account_last4=evaluation_result.bank_profile.account_last4,
             )
-            uow.loans.create(loan)
+            uow.loans.add(loan)
             uow.session.flush()
             uow.session.refresh(loan)
             return loan

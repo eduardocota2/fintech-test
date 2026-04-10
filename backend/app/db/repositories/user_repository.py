@@ -7,7 +7,7 @@ class UserRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    def create(self, user: User) -> User | None:
+    def add(self, user: User) -> User | None:
         self.session.add(user)
         return user
     
