@@ -21,10 +21,10 @@ def run_worker() -> None:
             processed = worker.process_next_job()
             if not processed:
                 time.sleep(sleep_seconds)
-        except OperationalError as exc:
-            logger.warning("Worker DB unavailable, retrying: %s", exc)
+        except OperationalError as exception:
+            logger.warning("Worker DB unavailable, retrying: %s", exception)
             time.sleep(sleep_seconds)
-        except Exception:
+        except Exception as exception:
             logger.exception("Unexpected worker error; continuing loop")
             time.sleep(sleep_seconds)
 

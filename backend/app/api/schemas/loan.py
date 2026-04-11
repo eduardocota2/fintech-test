@@ -1,5 +1,6 @@
 from datetime import date, datetime
 
+from typing import Any
 from pydantic import BaseModel, Field
 
 from app.db.utils.enums import ApplicationStatus, CountryCode
@@ -14,6 +15,20 @@ class LoanCreateRequest(BaseModel):
 
 class LoanStatusUpdateRequest(BaseModel):
     status: ApplicationStatus
+
+class RiskDecisionResponse(BaseModel):
+    id: str
+    loan_application_id: str
+    country_code: str
+    decision: str
+    score: float
+    max_possible_score: float
+    confidence: float
+    factors: dict[str, Any]
+    thresholds: dict[str, Any]
+    reason: str | None = None
+    evaluated_by: str
+    created_at: datetime
     
 class LoanResponse(BaseModel):
     id: str
@@ -28,6 +43,7 @@ class LoanResponse(BaseModel):
     risk_rating: str | None = None
     bank_name: str | None = None
     bank_account_last4: str | None = None
+    latest_risk_decision: RiskDecisionResponse | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -43,4 +59,7 @@ class LoanListItem(BaseModel):
     created_at: datetime
 
 class LoanListResponse(BaseModel):
+    total: int
+    limit: int
+    offset: int
     items: list[LoanListItem]

@@ -9,6 +9,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 from app.db.utils.enums import ApplicationStatus, CountryCode
 
+def _enum_values(enum_cls: type[CountryCode] | type[ApplicationStatus]) -> list[str]:
+    return [member.value for member in enum_cls]
 
 class LoanApplication(Base):
     __tablename__ = "loan_applications"
@@ -22,7 +24,7 @@ class LoanApplication(Base):
     monthly_income: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     application_date: Mapped[date] = mapped_column(Date, nullable=False)
     status: Mapped[ApplicationStatus] = mapped_column(
-        Enum(ApplicationStatus, name="application_status"),
+        Enum(ApplicationStatus, name="application_status", values_callable=_enum_values),
         default=ApplicationStatus.SUBMITTED,
         nullable=False,
     )
@@ -40,3 +42,8 @@ class LoanApplication(Base):
     user = relationship("User", back_populates="loan_applications")
     jobs = relationship("JobQueue", back_populates="loan_application")
     audit_logs = relationship("AuditLog", back_populates="loan_application")
+    risk_decisions = relationship(
+        "RiskDecision",
+        back_populates="loan_application",
+        order_by="RiskDecision.created_at.desc()",
+    )

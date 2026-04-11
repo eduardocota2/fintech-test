@@ -10,5 +10,5 @@ class NormalizedBankProfile:
 
 
 class BankingProvider(Protocol):
-    def fetch_bank_profile(self, document_id: str) -> NormalizedBankProfile:
+    def fetch_bank_profile(self, document_id: str, debug_debt_level: str | None = None,) -> NormalizedBankProfile:
         ...

@@ -9,13 +9,23 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 from app.db.utils.enums import JobStatus, JobType
 
+def _enum_values(enum_cls: type[JobStatus] | type[JobType]) -> list[str]:
+    return [member.value for member in enum_cls]
+
 class JobQueue(Base):
     __tablename__ = "job_queue"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     loan_application_id: Mapped[str] = mapped_column(String(36), ForeignKey("loan_applications.id"), nullable=False)
-    job_type: Mapped[JobType] = mapped_column(Enum(JobType, name="job_type"), nullable=False)
-    status: Mapped[JobStatus] = mapped_column(Enum(JobStatus, name="job_status"), nullable=False, default=JobStatus.PENDING)
+    job_type: Mapped[JobType] = mapped_column(
+        Enum(JobType, name="job_type", values_callable=_enum_values),
+        nullable=False,
+    )
+    status: Mapped[JobStatus] = mapped_column(
+        Enum(JobStatus, name="job_status", values_callable=_enum_values),
+        nullable=False,
+        default=JobStatus.PENDING,
+    )
     payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     error_message: Mapped[str | None] = mapped_column(String(500), nullable=True)
     tries: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

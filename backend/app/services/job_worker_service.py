@@ -5,11 +5,13 @@ from app.db.utils.enums import ApplicationStatus, JobType
 from app.db.models.job_queue import JobQueue
 from app.db.unit_of_work import SqlAlchemyUnitOfWork
 from app.integrations.webhook.client import WebhookNotifier
+from app.integrations.cache.application_list_cache import ApplicationListCache
 from app.services.errors import NotFoundError
 
 class JobWorkerService:
     def __init__(self) -> None:
         self.webhook_notifier = WebhookNotifier()
+        self.application_list_cache = ApplicationListCache()
 
     def process_next_job(self) -> bool:
         with SqlAlchemyUnitOfWork() as uow:
@@ -51,15 +53,18 @@ class JobWorkerService:
         is_valid = bool(job.payload.get("is_valid", False))
         needs_manual_review = bool(job.payload.get("needs_manual_review", False))
 
+        if loan.status == ApplicationStatus.SUBMITTED:
+            loan.status = ApplicationStatus.EVALUATING
+
         if not is_valid:
             loan.status = ApplicationStatus.REJECTED
             loan.risk_rating = "rejected"
         elif needs_manual_review:
-            loan.status = ApplicationStatus.EVALUATING
+            loan.status = ApplicationStatus.PENDING_REVIEW
             loan.risk_rating = "manual_review"
         else:
             loan.status = ApplicationStatus.APPROVED
-            loan.risk_rating = "approved"
+            loan.risk_rating = "approved_auto"
 
         uow.audit_logs.add(
             AuditLog(
@@ -74,18 +79,7 @@ class JobWorkerService:
             )
         )
 
-        if loan.status in (ApplicationStatus.APPROVED, ApplicationStatus.REJECTED):
-            uow.jobs.add(
-                JobQueue(
-                    loan_application_id=loan.id,
-                    job_type=JobType.WEBHOOK_NOTIFICATION,
-                    payload={
-                        "application_id": loan.id,
-                        "status": loan.status.value,
-                        "country": loan.country.value,
-                    },
-                )
-            )
+        self.application_list_cache.bump_version()
 
     def _process_webhook_notification(self, *, uow: SqlAlchemyUnitOfWork, job: JobQueue) -> None:
         if uow.audit_logs is None or uow.loans is None:
