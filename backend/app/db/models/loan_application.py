@@ -40,3 +40,8 @@ class LoanApplication(Base):
     user = relationship("User", back_populates="loan_applications")
     jobs = relationship("JobQueue", back_populates="loan_application")
     audit_logs = relationship("AuditLog", back_populates="loan_application")
+    risk_decisions = relationship(
+        "RiskDecision",
+        back_populates="loan_application",
+        order_by="RiskDecision.created_at.desc()",
+    )

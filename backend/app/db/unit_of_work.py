@@ -7,6 +7,7 @@ from app.db.repositories.audit_repository import AuditRepository
 from app.db.repositories.loan_repository import LoanRepository
 from app.db.repositories.user_repository import UserRepository
 from app.db.repositories.job_repository import JobRepository
+from app.db.repositories.risk_decision_repository import RiskDecisionRepository
 from app.db.session import SessionLocal
 
 
@@ -18,6 +19,7 @@ class SqlAlchemyUnitOfWork:
         self.users: UserRepository | None = None
         self.jobs: JobRepository | None = None
         self.audit_logs: AuditRepository | None = None
+        self.risk_decisions: RiskDecisionRepository | None = None
 
     def __enter__(self) -> "SqlAlchemyUnitOfWork":
         self.session = self.session_factory()
@@ -25,6 +27,7 @@ class SqlAlchemyUnitOfWork:
         self.users = UserRepository(self.session)
         self.jobs = JobRepository(self.session)
         self.audit_logs = AuditRepository(self.session)
+        self.risk_decisions = RiskDecisionRepository(self.session)
         return self
 
     def __exit__(

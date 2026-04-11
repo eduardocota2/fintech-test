@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 
-from app.domain.countries.base import CountryContext, CountryResult
+from app.domain.countries.base import CountryContext, CountryRuleResult
 from app.domain.countries.registry import get_country_rule_service
 from app.integrations.banking.base import NormalizedBankProfile
 from app.integrations.banking.registry import get_banking_provider
 from app.db.models.loan_application import LoanApplication
 from app.db.models.audit_log import AuditLog
 from app.db.models.job_queue import JobQueue
+from app.db.models.risk_decision import RiskDecision
 from app.db.unit_of_work import SqlAlchemyUnitOfWork
 from app.db.utils.enums import ApplicationStatus, CountryCode, JobType
 from app.services.errors import ForbiddenError, InvalidTransitionError, NotFoundError
@@ -16,7 +17,7 @@ from app.domain.workflows.transitions import can_transition, get_valid_transitio
 class ApplicationValidationResult:
     country_code: str
     bank_profile: NormalizedBankProfile
-    rules: CountryResult
+    rules: CountryRuleResult
 
 
 class ApplicationService:
@@ -36,6 +37,7 @@ class ApplicationService:
             monthly_income=monthly_income,
             amount_requested=amount_requested,
             provider_total_debt=bank_profile.total_debt,
+            provider_score_hint=bank_profile.score_hint,
         )
 
         rule_service = get_country_rule_service(country_code)
@@ -65,9 +67,18 @@ class ApplicationService:
             amount_requested=amount_requested,
         )
 
-        initial_status = ApplicationStatus.EVALUATING if evaluation_result.rules.is_valid else ApplicationStatus.REJECTED
+        initial_status = ApplicationStatus.SUBMITTED
 
         with SqlAlchemyUnitOfWork() as uow:
+            if (
+                uow.loans is None
+                or uow.jobs is None
+                or uow.audit_logs is None
+                or uow.risk_decisions is None
+                or uow.session is None
+            ):
+                raise RuntimeError("Repository unavailable")
+            
             loan = LoanApplication(
                 user_id=user_id,
                 country=country,
@@ -93,9 +104,29 @@ class ApplicationService:
                         "is_valid": evaluation_result.rules.is_valid,
                         "needs_manual_review": evaluation_result.rules.needs_manual_review,
                         "reason": evaluation_result.rules.reason,
+                        "scoring_details": evaluation_result.rules.scoring_details,
                     },
                 )
             )
+
+            if evaluation_result.rules.scoring_details:
+                details = evaluation_result.rules.scoring_details
+                thresholds = details.get("thresholds", {})
+                factors = details.get("factors", {})
+                uow.risk_decisions.add(
+                    RiskDecision(
+                        loan_application_id=loan.id,
+                        country_code=country.value,
+                        decision=str(details.get("decision", "manual_review")),
+                        score=float(details.get("score", 0)),
+                        max_possible_score=1000.0,
+                        confidence=1.0,
+                        factors=factors if isinstance(factors, dict) else {},
+                        thresholds=thresholds if isinstance(thresholds, dict) else {},
+                        reason=evaluation_result.rules.reason,
+                        evaluated_by="system",
+                    )
+                )
 
             uow.audit_logs.add(
                 AuditLog(
