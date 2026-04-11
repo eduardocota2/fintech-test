@@ -13,10 +13,12 @@ from app.api.schemas.loan import (
     RiskDecisionResponse,
 )
 from app.api.dependencies.auth import get_current_admin, get_current_user
+from app.integrations.cache.application_list_cache import ApplicationListCache
 from app.services.application_service import ApplicationService
 from app.services.errors import ForbiddenError, NotFoundError, InvalidTransitionError
 
 router = APIRouter(prefix="/applications", tags=["applications"])
+cache = ApplicationListCache()
 
 
 def _mask_document_id(value: str) -> str:
@@ -74,6 +76,7 @@ def create_application(payload: LoanCreateRequest, current_user: User = Depends(
         monthly_income=payload.monthly_income,
         application_date=payload.application_date,
     )
+    cache.bump_version()
 
     return _to_loan_response(loan)
 
@@ -90,6 +93,7 @@ def update_application_status(
             new_status=payload.status,
             changed_by=current_user.id,
         )
+        cache.bump_version()
     except NotFoundError as exception:
         raise HTTPException(status_code=404, detail=str(exception)) from exception
     except InvalidTransitionError as exception:
@@ -125,6 +129,15 @@ def list_applications(
     status_filter: ApplicationStatus | None = Query(default=None, alias="status"),
     current_user: User = Depends(get_current_user),
 ) -> LoanListResponse:
+    cached_payload = cache.get_list(
+        requester_id=current_user.id,
+        is_admin=current_user.is_admin,
+        country=country.value if country else None,
+        status_filter=status_filter.value if status_filter else None,
+    )
+    if cached_payload is not None:
+        return LoanListResponse.model_validate(cached_payload)
+
     service = ApplicationService()
     items = service.list_applications(
             country=country,
@@ -133,7 +146,7 @@ def list_applications(
             is_admin=current_user.is_admin,
         )
 
-    return LoanListResponse(
+    response = LoanListResponse(
         items=[
             LoanListItem(
                 id=item.id,
@@ -149,6 +162,15 @@ def list_applications(
             for item in items
         ]
     )
+
+    cache.set_list(
+        requester_id=current_user.id,
+        is_admin=current_user.is_admin,
+        country=country.value if country else None,
+        status_filter=status_filter.value if status_filter else None,
+        payload=response.model_dump(),
+    )
+    return response
 
 
 @router.get("/{application_id}/available-transitions", response_model=list[str])

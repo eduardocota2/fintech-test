@@ -33,6 +33,8 @@ class Settings(BaseModel):
     webhook_timeout_seconds: float = float(os.getenv("WEBHOOK_TIMEOUT_SECONDS", "5.0"))
     worker_poll_seconds: float = float(os.getenv("WORKER_POLL_SECONDS", "1.0"))
     sse_poll_seconds: float = float(os.getenv("SSE_POLL_SECONDS", "1.0"))
+    redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    applications_list_cache_ttl_seconds: int = int(os.getenv("APPLICATIONS_LIST_CACHE_TTL_SECONDS", "30"))
 
 
 @lru_cache

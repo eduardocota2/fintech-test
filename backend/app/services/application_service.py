@@ -221,21 +221,7 @@ class ApplicationService:
                             "country": loan.country.value,
                         },
                     )
-                )
-
-            if new_status in (ApplicationStatus.APPROVED, ApplicationStatus.REJECTED):
-                uow.jobs.add(
-                    JobQueue(
-                        loan_application_id=loan.id,
-                        job_type=JobType.WEBHOOK_NOTIFICATION,
-                        payload={
-                            "application_id": loan.id,
-                            "status": loan.status.value,
-                            "country": loan.country.value,
-                            "changed_by": changed_by,
-                        },
-                    )
-                )
+                )            
 
             uow.session.flush()
             uow.session.refresh(loan)
