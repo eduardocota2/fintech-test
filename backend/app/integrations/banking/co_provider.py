@@ -6,7 +6,7 @@ BANK_NAME = "Banco de Colombia"
 SCORE_MIN = 280
 SCORE_MAX = 900
 DEBT_MIN = 0.0
-DEBT_MAX = 12000000.0
+DEBT_MAX = 206271605.66
 
 class ColombiaBankingProvider(BankingProvider):
     country_code = 'CO'

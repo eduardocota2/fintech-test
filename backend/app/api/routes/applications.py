@@ -10,6 +10,7 @@ from app.api.schemas.loan import (
     LoanListResponse,
     LoanResponse,
     LoanStatusUpdateRequest,
+    RiskDecisionResponse,
 )
 from app.api.dependencies.auth import get_current_admin, get_current_user
 from app.services.application_service import ApplicationService
@@ -24,7 +25,24 @@ def _mask_document_id(value: str) -> str:
     return "*" * (len(value) - 4) + value[-4:]
 
 
-def _to_loan_response(item: LoanApplication) -> LoanResponse:
+def _to_loan_response(item: LoanApplication, latest_risk_decision=None) -> LoanResponse:
+    risk_payload = None
+    if latest_risk_decision is not None:
+        risk_payload = RiskDecisionResponse(
+            id=latest_risk_decision.id,
+            loan_application_id=latest_risk_decision.loan_application_id,
+            country_code=latest_risk_decision.country_code,
+            decision=latest_risk_decision.decision,
+            score=float(latest_risk_decision.score),
+            max_possible_score=float(latest_risk_decision.max_possible_score),
+            confidence=float(latest_risk_decision.confidence),
+            factors=latest_risk_decision.factors,
+            thresholds=latest_risk_decision.thresholds,
+            reason=latest_risk_decision.reason,
+            evaluated_by=latest_risk_decision.evaluated_by,
+            created_at=latest_risk_decision.created_at,
+        )
+
     return LoanResponse(
         id=item.id,
         user_id=item.user_id,
@@ -38,6 +56,7 @@ def _to_loan_response(item: LoanApplication) -> LoanResponse:
         risk_rating=item.risk_rating,
         bank_name=item.bank_name,
         bank_account_last4=item.bank_account_last4,
+        latest_risk_decision=risk_payload,
         created_at=item.created_at,
         updated_at=item.updated_at,
     )
@@ -71,10 +90,10 @@ def update_application_status(
             new_status=payload.status,
             changed_by=current_user.id,
         )
-    except NotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except InvalidTransitionError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except NotFoundError as exception:
+        raise HTTPException(status_code=404, detail=str(exception)) from exception
+    except InvalidTransitionError as exception:
+        raise HTTPException(status_code=400, detail=str(exception)) from exception
 
     return _to_loan_response(loan)
 
@@ -87,12 +106,17 @@ def get_application(application_id: str, current_user: User = Depends(get_curren
             requester_id=current_user.id,
             is_admin=current_user.is_admin,
         )
-    except NotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except ForbiddenError as exc:
-        raise HTTPException(status_code=403, detail=str(exc)) from exc
+        latest_risk_decision = service.get_latest_risk_decision(
+            application_id=application_id,
+            requester_id=current_user.id,
+            is_admin=current_user.is_admin,
+        )
+    except NotFoundError as exception:
+        raise HTTPException(status_code=404, detail=str(exception)) from exception
+    except ForbiddenError as exception:
+        raise HTTPException(status_code=403, detail=str(exception)) from exception
 
-    return _to_loan_response(loan)
+    return _to_loan_response(loan, latest_risk_decision=latest_risk_decision)
 
 
 @router.get("", response_model=LoanListResponse)

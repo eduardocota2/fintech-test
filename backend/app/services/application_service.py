@@ -109,24 +109,28 @@ class ApplicationService:
                 )
             )
 
-            if evaluation_result.rules.scoring_details:
-                details = evaluation_result.rules.scoring_details
-                thresholds = details.get("thresholds", {})
-                factors = details.get("factors", {})
-                uow.risk_decisions.add(
-                    RiskDecision(
-                        loan_application_id=loan.id,
-                        country_code=country.value,
-                        decision=str(details.get("decision", "manual_review")),
-                        score=float(details.get("score", 0)),
-                        max_possible_score=1000.0,
-                        confidence=1.0,
-                        factors=factors if isinstance(factors, dict) else {},
-                        thresholds=thresholds if isinstance(thresholds, dict) else {},
-                        reason=evaluation_result.rules.reason,
-                        evaluated_by="system",
-                    )
+            details = evaluation_result.rules.scoring_details or {
+                "decision": "rejected" if not evaluation_result.rules.is_valid else "manual_review",
+                "score": 0,
+                "factors": {},
+                "thresholds": {},
+            }
+            thresholds = details.get("thresholds", {})
+            factors = details.get("factors", {})
+            uow.risk_decisions.add(
+                RiskDecision(
+                    loan_application_id=loan.id,
+                    country_code=country.value,
+                    decision=str(details.get("decision", "manual_review")),
+                    score=float(details.get("score", 0)),
+                    max_possible_score=1000.0,
+                    confidence=1.0,
+                    factors=factors if isinstance(factors, dict) else {},
+                    thresholds=thresholds if isinstance(thresholds, dict) else {},
+                    reason=evaluation_result.rules.reason,
+                    evaluated_by="system",
                 )
+            )
 
             uow.audit_logs.add(
                 AuditLog(
@@ -250,3 +254,21 @@ class ApplicationService:
             is_admin=is_admin,
         )
         return [status.value for status in get_valid_transitions(loan.country.value, loan.status)]
+    
+    def get_latest_risk_decision(
+        self,
+        *,
+        application_id: str,
+        requester_id: str,
+        is_admin: bool,
+    ) -> RiskDecision | None:        
+        self.get_application(
+            application_id=application_id,
+            requester_id=requester_id,
+            is_admin=is_admin,
+        )
+
+        with SqlAlchemyUnitOfWork() as uow:
+            if uow.risk_decisions is None:
+                raise RuntimeError("Repository unavailable")
+            return uow.risk_decisions.get_latest(application_id)

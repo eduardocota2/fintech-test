@@ -6,7 +6,7 @@ BANK_NAME = "Banco de México"
 SCORE_MIN = 450
 SCORE_MAX = 820
 DEBT_MIN = 0.0
-DEBT_MAX = 45000.0
+DEBT_MAX = 1000000.0
 
 class MexicoBankingProvider(BankingProvider):
     country_code = 'MX'

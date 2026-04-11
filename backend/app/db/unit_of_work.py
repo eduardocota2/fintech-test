@@ -33,7 +33,7 @@ class SqlAlchemyUnitOfWork:
     def __exit__(
         self,
         exc_type: type[BaseException] | None,
-        exc: BaseException | None,
+        exception: BaseException | None,
         tb: TracebackType | None,
     ) -> None:
         if self.session is None:
