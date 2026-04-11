@@ -1,4 +1,4 @@
-from sqlalchemy import Select, select
+from sqlalchemy import Select, select, func
 from sqlalchemy.orm import Session
 
 from app.db.models.loan_application import LoanApplication
@@ -16,17 +16,25 @@ class LoanRepository:
         return self.session.get(LoanApplication, application_id)
     
     def list_by_filters(
-            self,
-            *,
-            country: CountryCode | None = None,
-            status: ApplicationStatus | None = None,
-    ) -> list[LoanApplication]:
-        stmt: Select[tuple[LoanApplication]] = select(LoanApplication)
+        self,
+        *,
+        country: CountryCode | None = None,
+        status: ApplicationStatus | None = None,
+        user_id: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[int, list[LoanApplication]]:
+        base_stmt: Select[tuple[LoanApplication]] = select(LoanApplication)
 
         if country:
-            stmt = stmt.where(LoanApplication.country == country)
+            base_stmt = base_stmt.where(LoanApplication.country == country)
         if status:
-            stmt = stmt.where(LoanApplication.status == status)
+            base_stmt = base_stmt.where(LoanApplication.status == status)
+        if user_id:
+            base_stmt = base_stmt.where(LoanApplication.user_id == user_id)
 
-        stmt = stmt.order_by(LoanApplication.created_at.desc())
-        return list(self.session.scalars(stmt))
+        count_stmt = select(func.count()).select_from(base_stmt.subquery())
+        total = int(self.session.execute(count_stmt).scalar_one())
+
+        stmt = base_stmt.order_by(LoanApplication.created_at.desc()).limit(limit).offset(offset)
+        return total, list(self.session.scalars(stmt))

@@ -59,4 +59,7 @@ class LoanListItem(BaseModel):
     created_at: datetime
 
 class LoanListResponse(BaseModel):
+    total: int
+    limit: int
+    offset: int
     items: list[LoanListItem]

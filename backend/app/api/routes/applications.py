@@ -144,6 +144,8 @@ def get_application(application_id: str, current_user: User = Depends(get_curren
 def list_applications(
     country: CountryCode | None = Query(default=None),
     status_filter: ApplicationStatus | None = Query(default=None, alias="status"),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     current_user: User = Depends(get_current_user),
 ) -> LoanListResponse:
     cached_payload = cache.get_list(
@@ -151,19 +153,26 @@ def list_applications(
         is_admin=current_user.is_admin,
         country=country.value if country else None,
         status_filter=status_filter.value if status_filter else None,
+        limit=limit,
+        offset=offset,
     )
     if cached_payload is not None:
         return LoanListResponse.model_validate(cached_payload)
 
     service = ApplicationService()
-    items = service.list_applications(
+    total, items = service.list_applications(
             country=country,
             status=status_filter,
             requester_id=current_user.id,
             is_admin=current_user.is_admin,
+            limit=limit,
+            offset=offset,
         )
 
     response = LoanListResponse(
+        total=total,
+        limit=limit,
+        offset=offset,
         items=[
             LoanListItem(
                 id=item.id,
@@ -185,6 +194,8 @@ def list_applications(
         is_admin=current_user.is_admin,
         country=country.value if country else None,
         status_filter=status_filter.value if status_filter else None,
+        limit=limit,
+        offset=offset,
         payload=response.model_dump(mode="json"),
     )
     return response

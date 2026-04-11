@@ -174,11 +174,21 @@ class ApplicationService:
         status: ApplicationStatus | None,
         requester_id: str,
         is_admin: bool,
-    ) -> list[LoanApplication]:
-        with SqlAlchemyUnitOfWork() as uow:            
-            all_items = uow.loans.list_by_filters(country=country, status=status)
+        limit: int,
+        offset: int,
+    ) -> tuple[int, list[LoanApplication]]:
+        with SqlAlchemyUnitOfWork() as uow:
+            if uow.loans is None:
+                raise RuntimeError("Repository unavailable")
+            total, all_items = uow.loans.list_by_filters(
+                country=country,
+                status=status,
+                user_id=None if is_admin else requester_id,
+                limit=limit,
+                offset=offset,
+            )
 
-        return [item for item in all_items if is_admin or item.user_id == requester_id]
+        return total, all_items
 
     def update_application_status(
         self,

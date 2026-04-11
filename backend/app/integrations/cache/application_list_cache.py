@@ -46,6 +46,8 @@ class ApplicationListCache:
         is_admin: bool,
         country: str | None,
         status_filter: str | None,
+        limit: int,
+        offset: int,
         version: int,
     ) -> str:
         country_token = country or "all"
@@ -53,7 +55,7 @@ class ApplicationListCache:
         role_token = "admin" if is_admin else "user"
         return (
             f"{_CACHE_KEY_PREFIX}:v{version}:role:{role_token}:user:{requester_id}:"
-            f"country:{country_token}:status:{status_token}"
+            f"country:{country_token}:status:{status_token}:limit:{limit}:offset:{offset}"
         )
     
     def get_list(
@@ -63,6 +65,8 @@ class ApplicationListCache:
         is_admin: bool,
         country: str | None,
         status_filter: str | None,
+        limit: int,
+        offset: int,
     ) -> list[dict] | None:
         version = self._safe_get_version()
         key = self._build_key(
@@ -70,6 +74,8 @@ class ApplicationListCache:
             is_admin=is_admin,
             country=country,
             status_filter=status_filter,
+            limit=limit,
+            offset=offset,
             version=version,
         )
         try:
@@ -91,6 +97,8 @@ class ApplicationListCache:
         is_admin: bool,
         country: str | None,
         status_filter: str | None,
+        limit: int,
+        offset: int,
         payload: dict,
     ) -> None:
         version = self._safe_get_version()
@@ -99,6 +107,8 @@ class ApplicationListCache:
             is_admin=is_admin,
             country=country,
             status_filter=status_filter,
+            limit=limit,
+            offset=offset,
             version=version,
         )
         try:
