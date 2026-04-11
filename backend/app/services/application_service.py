@@ -9,7 +9,8 @@ from app.db.models.audit_log import AuditLog
 from app.db.models.job_queue import JobQueue
 from app.db.unit_of_work import SqlAlchemyUnitOfWork
 from app.db.utils.enums import ApplicationStatus, CountryCode, JobType
-from app.services.errors import ForbiddenError, NotFoundError
+from app.services.errors import ForbiddenError, InvalidTransitionError, NotFoundError
+from app.domain.workflows.transitions import can_transition, get_valid_transitions
 
 @dataclass(frozen=True)
 class ApplicationValidationResult:
@@ -142,6 +143,7 @@ class ApplicationService:
         *,
         application_id: str,
         new_status: ApplicationStatus,
+        changed_by: str,
     ) -> LoanApplication:
         with SqlAlchemyUnitOfWork() as uow:
             if uow.loans is None or uow.jobs is None or uow.audit_logs is None or uow.session is None:
@@ -151,31 +153,69 @@ class ApplicationService:
             if loan is None:
                 raise NotFoundError("Application not found")
 
+            old_status = loan.status
+            if not can_transition(loan.country.value, old_status, new_status):
+                valid = [item.value for item in get_valid_transitions(loan.country.value, old_status)]
+                raise InvalidTransitionError(
+                    f"Cannot transition from {old_status.value} to {new_status.value}. Valid: {valid}"
+                )
+
             loan.status = new_status
 
             uow.audit_logs.add(
                 AuditLog(
                     loan_application_id=loan.id,
-                    action="status_updated_manual",
+                    action="status_transition",
                     details={
-                        "status": loan.status.value,
-                        "user_id": loan.user_id,
-                    },
-                )
-            )
-
-            uow.jobs.add(
-                JobQueue(
-                    loan_application_id=loan.id,
-                    job_type=JobType.WEBHOOK_NOTIFICATION,
-                    payload={
-                        "application_id": loan.id,
-                        "status": loan.status.value,
+                        "from_status": old_status.value,
+                        "to_status": loan.status.value,
+                        "changed_by": changed_by,
+                        "owner_user_id": loan.user_id,
                         "country": loan.country.value,
                     },
                 )
             )
 
+            if new_status == ApplicationStatus.EVALUATING:
+                uow.jobs.add(
+                    JobQueue(
+                        loan_application_id=loan.id,
+                        job_type=JobType.RISK_EVALUATION,
+                        payload={
+                            "application_id": loan.id,
+                            "country": loan.country.value,
+                        },
+                    )
+                )
+
+            if new_status in (ApplicationStatus.APPROVED, ApplicationStatus.REJECTED):
+                uow.jobs.add(
+                    JobQueue(
+                        loan_application_id=loan.id,
+                        job_type=JobType.WEBHOOK_NOTIFICATION,
+                        payload={
+                            "application_id": loan.id,
+                            "status": loan.status.value,
+                            "country": loan.country.value,
+                            "changed_by": changed_by,
+                        },
+                    )
+                )
+
             uow.session.flush()
             uow.session.refresh(loan)
             return loan
+
+    def get_available_transitions(
+        self,
+        *,
+        application_id: str,
+        requester_id: str,
+        is_admin: bool,
+    ) -> list[str]:
+        loan = self.get_application(
+            application_id=application_id,
+            requester_id=requester_id,
+            is_admin=is_admin,
+        )
+        return [status.value for status in get_valid_transitions(loan.country.value, loan.status)]

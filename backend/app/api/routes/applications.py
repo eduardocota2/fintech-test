@@ -13,7 +13,7 @@ from app.api.schemas.loan import (
 )
 from app.api.dependencies.auth import get_current_admin, get_current_user
 from app.services.application_service import ApplicationService
-from app.services.errors import ForbiddenError, NotFoundError
+from app.services.errors import ForbiddenError, NotFoundError, InvalidTransitionError
 
 router = APIRouter(prefix="/applications", tags=["applications"])
 
@@ -62,19 +62,21 @@ def create_application(payload: LoanCreateRequest, current_user: User = Depends(
 def update_application_status(
     application_id: str,
     payload: LoanStatusUpdateRequest,
-    _: User = Depends(get_current_admin),
+    current_user: User = Depends(get_current_admin),
 ) -> LoanResponse:
     service = ApplicationService()
     try:
         loan = service.update_application_status(
             application_id=application_id,
             new_status=payload.status,
+            changed_by=current_user.id,
         )
     except NotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except InvalidTransitionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     return _to_loan_response(loan)
-
 
 @router.get("/{application_id}", response_model=LoanResponse)
 def get_application(application_id: str, current_user: User = Depends(get_current_user)) -> LoanResponse:
@@ -123,3 +125,18 @@ def list_applications(
             for item in items
         ]
     )
+
+
+@router.get("/{application_id}/available-transitions", response_model=list[str])
+def get_available_transitions(application_id: str, current_user: User = Depends(get_current_user)) -> list[str]:
+    service = ApplicationService()
+    try:
+        return service.get_available_transitions(
+            application_id=application_id,
+            requester_id=current_user.id,
+            is_admin=current_user.is_admin,
+        )
+    except NotFoundError as exception:
+        raise HTTPException(status_code=404, detail=str(exception)) from exception
+    except ForbiddenError as exception:
+        raise HTTPException(status_code=403, detail=str(exception)) from exception

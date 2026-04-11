@@ -7,6 +7,7 @@ class CountryCode(str, Enum):
 class ApplicationStatus(str, Enum):
     SUBMITTED = 'submitted'
     EVALUATING = 'evaluating'
+    PENDING_REVIEW = "pending_review"
     APPROVED = 'approved'
     REJECTED = 'rejected'
 

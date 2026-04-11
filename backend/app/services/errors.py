@@ -16,3 +16,7 @@ class ForbiddenError(ServiceError):
 
 class AuthError(ServiceError):
     pass
+
+
+class InvalidTransitionError(ServiceError):
+    pass

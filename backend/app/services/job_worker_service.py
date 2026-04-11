@@ -51,15 +51,18 @@ class JobWorkerService:
         is_valid = bool(job.payload.get("is_valid", False))
         needs_manual_review = bool(job.payload.get("needs_manual_review", False))
 
+        if loan.status == ApplicationStatus.SUBMITTED:
+            loan.status = ApplicationStatus.EVALUATING
+
         if not is_valid:
             loan.status = ApplicationStatus.REJECTED
             loan.risk_rating = "rejected"
         elif needs_manual_review:
             loan.status = ApplicationStatus.EVALUATING
-            loan.risk_rating = "manual_review"
+            loan.risk_rating = ApplicationStatus.PENDING_REVIEW
         else:
             loan.status = ApplicationStatus.APPROVED
-            loan.risk_rating = "approved"
+            loan.risk_rating = "auto approved"
 
         uow.audit_logs.add(
             AuditLog(
