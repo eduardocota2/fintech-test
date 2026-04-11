@@ -2,8 +2,8 @@ import { computed, reactive } from 'vue'
 
 import type { SessionState } from '../models'
 
-const TOKEN_KEY = 'bravo_token'
-const TOKEN_TYPE_KEY = 'bravo_token_type'
+const TOKEN_KEY = 'fintech_token'
+const TOKEN_TYPE_KEY = 'fintech_token_type'
 
 const state = reactive<SessionState>({
   token: '',

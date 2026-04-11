@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 import type { LoanCreateRequest } from '../types'
 
@@ -11,7 +11,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: LoanCreateRequest]
-  submit: []
+  submit: [debugDebtLevel?: 'low' | 'medium' | 'high']
 }>()
 
 const form = computed<LoanCreateRequest>({
@@ -21,6 +21,13 @@ const form = computed<LoanCreateRequest>({
 
 function updateField<K extends keyof LoanCreateRequest>(key: K, value: LoanCreateRequest[K]): void {
   emit('update:modelValue', { ...form.value, [key]: value })
+}
+
+const debugModeEnabled = ref(false)
+const selectedDebugDebtLevel = ref<'low' | 'medium' | 'high'>('medium')
+
+function submitCreate(): void {
+  emit('submit', debugModeEnabled.value ? selectedDebugDebtLevel.value : undefined)
 }
 </script>
 
@@ -77,6 +84,44 @@ function updateField<K extends keyof LoanCreateRequest>(key: K, value: LoanCreat
         @input="updateField('application_date', ($event.target as HTMLInputElement).value)"
       />
     </label>
-    <button :disabled="busy || !isAuthenticated" @click="emit('submit')">Crear solicitud</button>
+
+    <section class="debug-box">
+      <label class="inline">
+        <input v-model="debugModeEnabled" type="checkbox" />
+        Modo testing (solo desarrollo)
+      </label>
+
+      <div v-if="debugModeEnabled" class="debug-controls">
+        <label class="inline">
+          <input v-model="selectedDebugDebtLevel" type="radio" value="low" name="debug-debt-level" />
+          Deuda baja (low)
+        </label>
+        <label class="inline">
+          <input v-model="selectedDebugDebtLevel" type="radio" value="medium" name="debug-debt-level" />
+          Deuda media (medium)
+        </label>
+        <label class="inline">
+          <input v-model="selectedDebugDebtLevel" type="radio" value="high" name="debug-debt-level" />
+          Deuda alta (high)
+        </label>
+      </div>
+    </section>
+
+    <button :disabled="busy || !isAuthenticated" @click="submitCreate">Crear solicitud</button>
   </article>
 </template>
+
+<style scoped>
+.debug-box {
+  border: 1px dashed #94a3b8;
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.debug-controls {
+  display: grid;
+  gap: 6px;
+}
+</style>

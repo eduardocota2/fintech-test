@@ -1,13 +1,22 @@
 import type { ApplicationStatus, Filters, LoanCreateRequest, LoanDetail, LoanListResponse } from '../models'
 import { authHeader, request } from './http'
 
-export async function createApplication(token: string, payload: LoanCreateRequest): Promise<LoanDetail> {
+export async function createApplication(
+  token: string,
+  payload: LoanCreateRequest,
+  debugDebtLevel?: 'low' | 'medium' | 'high',
+): Promise<LoanDetail> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...authHeader(token),
+  }
+  if (debugDebtLevel) {
+    headers['X-Debug-Debt-Level'] = debugDebtLevel
+  }
+
   return request<LoanDetail>('/applications', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...authHeader(token),
-    },
+    headers,
     body: JSON.stringify(payload),
   })
 }

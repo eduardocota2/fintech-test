@@ -97,10 +97,10 @@ async function loadDetail(id: string): Promise<void> {
   }
 }
 
-async function submitCreateApplication(): Promise<void> {
+async function submitCreateApplication(debugDebtLevel?: 'low' | 'medium' | 'high'): Promise<void> {
   busy.value = true
   try {
-    const payload = await createApplication(currentToken(), createForm.value)
+    const payload = await createApplication(currentToken(), createForm.value, debugDebtLevel)
     setMessage(`Solicitud creada: ${payload.id}`)
     await loadApplications()
     await loadDetail(payload.id)

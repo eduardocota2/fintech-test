@@ -19,13 +19,13 @@ function logout(): void {
   <main class="shell">
     <header class="hero">
       <div>
-        <h1>Bravo Credit Console</h1>
-        <p>MVP frontend para solicitudes de credito multi-pais.</p>
+        <h1>Fintech Credit Console</h1>
+        <p>MVP frontend para solicitudes de crédito multi-país.</p>
       </div>
 
       <nav class="actions">
         <span v-if="isAuthenticated" class="badge">{{ isAdmin ? 'Admin' : 'No admin' }}</span>
-        <button v-if="isAuthenticated" class="logout-btn" @click="logout">Cerrar sesion</button>
+        <button v-if="isAuthenticated" class="logout-btn" @click="logout">Cerrar sesión</button>
         <a href="/docs" target="_blank" rel="noreferrer">API Docs</a>
       </nav>
     </header>
