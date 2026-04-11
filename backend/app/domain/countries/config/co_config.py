@@ -15,27 +15,30 @@ WEIGHT_INCOME_STABILITY = 0.10
 WEIGHT_DOCUMENT_VALIDITY = 0.05
 
 # Scoring configuration
-MAX_ACCEPTABLE_DEBT_RATIO = 0.8
+MAX_ACCEPTABLE_DEBT_RATIO = 0.40
 DEBT_CURVE = "strict"
 MAX_AMOUNT_MULTIPLIER = 15
-OPTIMAL_AMOUNT_MULTIPLIER = 5
+MAX_AMOUNT_MULTIPLIER = 8
+OPTIMAL_AMOUNT_MULTIPLIER = 3.5
 CREDIT_SCORE_MIN = 150
-CREDIT_SCORE_MAX = 1000
-CREDIT_SCORE_EXCELLENT = 850
+CREDIT_SCORE_MAX = 950
+CREDIT_SCORE_EXCELLENT = 780
 CREDIT_SCORE_POOR = 500
-MIN_STABLE_INCOME = 908526
-OPTIMAL_STABLE_INCOME = 5000000
+
+MIN_WAGE_MONTHLY_COP_2026 = 1750905
+MIN_STABLE_INCOME = MIN_WAGE_MONTHLY_COP_2026
+OPTIMAL_STABLE_INCOME = MIN_WAGE_MONTHLY_COP_2026 * 3.0
 
 # Decision thresholds
-AUTO_APPROVE_MIN = 720
-MANUAL_REVIEW_MIN = 580
-HARD_REJECT_MAX = 580
+AUTO_APPROVE_MIN = 710
+MANUAL_REVIEW_MIN = 560
+HARD_REJECT_MAX = 560
 
 # Hard-rule thresholds
-HARD_MAX_DEBT_RATIO = 1.0
-HARD_MAX_AMOUNT_MULTIPLIER = 18
+HARD_MAX_DEBT_RATIO = 0.55
+HARD_MAX_AMOUNT_MULTIPLIER = 10
 HARD_MIN_CREDIT_SCORE = 300
-HARD_MIN_MONTHLY_INCOME = 454263
+HARD_MIN_MONTHLY_INCOME = MIN_WAGE_MONTHLY_COP_2026 * 0.7
 
 CO_FACTORS = [
     ScoringFactor(
@@ -95,19 +98,19 @@ def co_hard_rules():
     return [
         lambda ctx: (
             (ctx.provider_total_debt or 0) / max(ctx.monthly_income, 1) <= HARD_MAX_DEBT_RATIO,
-            "Critical debt load: total debt exceeds monthly income",
+            "Deuda total excede ingreso mensual",
         ),
         lambda ctx: (
             ctx.amount_requested / max(ctx.monthly_income, 1) <= HARD_MAX_AMOUNT_MULTIPLIER,
-            "Requested amount exceeds 18x monthly income",
+            "Monto solicitado excede 10x el ingreso mensual",
         ),
         lambda ctx: (
             (ctx.provider_score_hint or 0) >= HARD_MIN_CREDIT_SCORE,
-            "Credit score is critically low",
+            "Score de crédito críticamente bajo",
         ),
         lambda ctx: (
             ctx.monthly_income >= HARD_MIN_MONTHLY_INCOME,
-            "Monthly income below legal minimum floor",
+            "Ingreso mensual por debajo del mínimo legal",
         ),
     ]
 

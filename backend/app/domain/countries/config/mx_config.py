@@ -15,27 +15,32 @@ WEIGHT_INCOME_STABILITY = 0.15
 WEIGHT_DOCUMENT_VALIDITY = 0.05
 
 # Scoring configuration
-MAX_ACCEPTABLE_DEBT_RATIO = 1.2
+MAX_ACCEPTABLE_DEBT_RATIO = 0.45
 DEBT_CURVE = "linear"
-MAX_AMOUNT_MULTIPLIER = 20
-OPTIMAL_AMOUNT_MULTIPLIER = 6
-CREDIT_SCORE_MIN = 300
+
+MAX_AMOUNT_MULTIPLIER = 10
+OPTIMAL_AMOUNT_MULTIPLIER = 4
+
+CREDIT_SCORE_MIN = 400
 CREDIT_SCORE_MAX = 850
-CREDIT_SCORE_EXCELLENT = 750
+CREDIT_SCORE_EXCELLENT = 740
 CREDIT_SCORE_POOR = 550
-MIN_STABLE_INCOME = 5000
-OPTIMAL_STABLE_INCOME = 25000
+
+MIN_WAGE_DAILY_MXN_2026 = 315.04
+MIN_WAGE_MONTHLY_MXN_2026 = MIN_WAGE_DAILY_MXN_2026 * 30
+MIN_STABLE_INCOME = MIN_WAGE_MONTHLY_MXN_2026
+OPTIMAL_STABLE_INCOME = MIN_WAGE_MONTHLY_MXN_2026 * 3.0
 
 # Decision thresholds
-AUTO_APPROVE_MIN = 750
-MANUAL_REVIEW_MIN = 550
-HARD_REJECT_MAX = 550
+AUTO_APPROVE_MIN = 720
+MANUAL_REVIEW_MIN = 560
+HARD_REJECT_MAX = 560
 
 # Hard-rule thresholds
-HARD_MAX_DEBT_RATIO = 1.5
-HARD_MAX_AMOUNT_MULTIPLIER = 25
-HARD_MIN_CREDIT_SCORE = 350
-HARD_MIN_MONTHLY_INCOME = 2000
+HARD_MAX_DEBT_RATIO = 0.60
+HARD_MAX_AMOUNT_MULTIPLIER = 12
+HARD_MIN_CREDIT_SCORE = 500
+HARD_MIN_MONTHLY_INCOME = MIN_WAGE_MONTHLY_MXN_2026 * 0.8
 
 MX_FACTORS = [
     ScoringFactor(
@@ -95,19 +100,19 @@ def mx_hard_rules():
     return [
         lambda ctx: (
             (ctx.provider_total_debt or 0) / max(ctx.monthly_income, 1) <= HARD_MAX_DEBT_RATIO,
-            "Critical debt load: total debt exceeds 150% of monthly income",
+            "Carga de deuda crítica: la deuda total excede el 60% del ingreso mensual",
         ),
         lambda ctx: (
             ctx.amount_requested / max(ctx.monthly_income, 1) <= HARD_MAX_AMOUNT_MULTIPLIER,
-            "Requested amount exceeds 25x monthly income",
+            "Monto solicitado excede 12x el ingreso mensual",
         ),
         lambda ctx: (
             (ctx.provider_score_hint or 0) >= HARD_MIN_CREDIT_SCORE,
-            "Credit score is critically low",
+            "Score de crédito críticamente bajo",
         ),
         lambda ctx: (
             ctx.monthly_income >= HARD_MIN_MONTHLY_INCOME,
-            "Monthly income below minimum threshold",
+            "Ingreso mensual por debajo del mínimo legal",
         ),
     ]
 
