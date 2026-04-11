@@ -46,7 +46,7 @@ class ApplicationService:
         rules = rule_service.validate(context=context)
 
         return ApplicationValidationResult(
-            country_code=country_code,
+            country_code=country_code.upper(),
             bank_profile=bank_profile,
             rules=rules,
         )
