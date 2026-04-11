@@ -35,7 +35,7 @@ MANUAL_REVIEW_MIN = 560
 HARD_REJECT_MAX = 560
 
 # Hard-rule thresholds
-HARD_MAX_DEBT_RATIO = 0.55
+HARD_MAX_DEBT_RATIO = 3.0
 HARD_MAX_AMOUNT_MULTIPLIER = 10
 HARD_MIN_CREDIT_SCORE = 300
 HARD_MIN_MONTHLY_INCOME = MIN_WAGE_MONTHLY_COP_2026 * 0.7
@@ -98,7 +98,7 @@ def co_hard_rules():
     return [
         lambda ctx: (
             (ctx.provider_total_debt or 0) / max(ctx.monthly_income, 1) <= HARD_MAX_DEBT_RATIO,
-            "Deuda total excede ingreso mensual",
+            "Carga de deuda crítica: la deuda total excede el 300% del ingreso mensual",
         ),
         lambda ctx: (
             ctx.amount_requested / max(ctx.monthly_income, 1) <= HARD_MAX_AMOUNT_MULTIPLIER,

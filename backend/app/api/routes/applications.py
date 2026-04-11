@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Header, Query, status
+from typing import Annotated, Literal
 
 from app.db.utils.enums import CountryCode
 from app.db.utils.enums import ApplicationStatus
 from app.db.models.loan_application import LoanApplication
 from app.db.models.user import User
+from app.core.config import get_settings
 from app.api.schemas.loan import (
     LoanCreateRequest,
     LoanListItem,
@@ -65,7 +67,21 @@ def _to_loan_response(item: LoanApplication, latest_risk_decision=None) -> LoanR
 
 
 @router.post("", response_model=LoanResponse, status_code=status.HTTP_201_CREATED)
-def create_application(payload: LoanCreateRequest, current_user: User = Depends(get_current_user)) -> LoanResponse:
+def create_application(
+    payload: LoanCreateRequest, 
+    current_user: User = Depends(get_current_user),
+    debug_debt_level: Annotated[
+        Literal["low", "medium", "high"] | None,
+        Header(alias="X-Debug-Debt-Level"),
+    ] = None,
+) -> LoanResponse:    
+    settings = get_settings()
+    if debug_debt_level is not None and not settings.enable_debug_debt_header:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="X-Debug-Debt-Level is disabled in this environment",
+        )
+
     service = ApplicationService()
     loan = service.create_application(
         user_id=current_user.id,
@@ -75,6 +91,7 @@ def create_application(payload: LoanCreateRequest, current_user: User = Depends(
         amount_requested=payload.amount_requested,
         monthly_income=payload.monthly_income,
         application_date=payload.application_date,
+        debug_debt_level=debug_debt_level,
     )
     cache.bump_version()
 
@@ -168,7 +185,7 @@ def list_applications(
         is_admin=current_user.is_admin,
         country=country.value if country else None,
         status_filter=status_filter.value if status_filter else None,
-        payload=response.model_dump(),
+        payload=response.model_dump(mode="json"),
     )
     return response
 

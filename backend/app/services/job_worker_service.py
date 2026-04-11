@@ -60,11 +60,11 @@ class JobWorkerService:
             loan.status = ApplicationStatus.REJECTED
             loan.risk_rating = "rejected"
         elif needs_manual_review:
-            loan.status = ApplicationStatus.EVALUATING
-            loan.risk_rating = ApplicationStatus.PENDING_REVIEW
+            loan.status = ApplicationStatus.PENDING_REVIEW
+            loan.risk_rating = "manual_review"
         else:
             loan.status = ApplicationStatus.APPROVED
-            loan.risk_rating = "auto approved"
+            loan.risk_rating = "approved_auto"
 
         uow.audit_logs.add(
             AuditLog(

@@ -20,6 +20,11 @@ def _load_env_file() -> None:
 
 _load_env_file()
 
+def _parse_bool(value: str | None, *, default: bool = False) -> bool:
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
 
 class Settings(BaseModel):
     app_name: str = os.getenv("APP_NAME", "Fintech Test")
@@ -35,7 +40,8 @@ class Settings(BaseModel):
     sse_poll_seconds: float = float(os.getenv("SSE_POLL_SECONDS", "1.0"))
     redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     applications_list_cache_ttl_seconds: int = int(os.getenv("APPLICATIONS_LIST_CACHE_TTL_SECONDS", "30"))
-
+    app_env: str = os.getenv("APP_ENV", "development")
+    enable_debug_debt_header: bool = _parse_bool(os.getenv("ENABLE_DEBUG_DEBT_HEADER"), default=False)
 
 @lru_cache
 def get_settings() -> Settings:

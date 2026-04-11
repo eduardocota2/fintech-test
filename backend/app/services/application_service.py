@@ -27,10 +27,12 @@ class ApplicationService:
             country_code: str, 
             document_id: str, 
             monthly_income: float, 
-            amount_requested: float) -> ApplicationValidationResult:
+            amount_requested: float,
+            debug_debt_level: str | None = None,
+            ) -> ApplicationValidationResult:
         
         provider = get_banking_provider(country_code)
-        bank_profile = provider.fetch_bank_profile(document_id)
+        bank_profile = provider.fetch_bank_profile(document_id, debug_debt_level=debug_debt_level)
         context = CountryContext(
             country_code=country_code,
             document_id=document_id,
@@ -58,13 +60,16 @@ class ApplicationService:
             document_id: str,
             amount_requested: float,
             monthly_income: float,
-            application_date) -> LoanApplication:
+            application_date,
+            debug_debt_level: str | None = None,
+            ) -> LoanApplication:
         
         evaluation_result = self.evaluate_credit(
             country_code=country.value,
             document_id=document_id,
             monthly_income=monthly_income,
             amount_requested=amount_requested,
+            debug_debt_level=debug_debt_level,
         )
 
         initial_status = ApplicationStatus.SUBMITTED
@@ -88,7 +93,7 @@ class ApplicationService:
                 monthly_income=monthly_income,
                 application_date=application_date,
                 status=initial_status,
-                risk_rating="manual_review" if evaluation_result.rules.needs_manual_review else "standard",
+                risk_rating="pending_async",
                 bank_name=evaluation_result.bank_profile.bank_name,
                 bank_account_last4=evaluation_result.bank_profile.account_last4,
             )
@@ -104,6 +109,7 @@ class ApplicationService:
                         "is_valid": evaluation_result.rules.is_valid,
                         "needs_manual_review": evaluation_result.rules.needs_manual_review,
                         "reason": evaluation_result.rules.reason,
+                        "score_hint": debug_debt_level,
                         "scoring_details": evaluation_result.rules.scoring_details,
                     },
                 )
@@ -140,6 +146,7 @@ class ApplicationService:
                         "status": loan.status.value,
                         "country": loan.country.value,
                         "user_id": loan.user_id,
+                        "debug_debt_level": debug_debt_level,
                     },
                 )
             )

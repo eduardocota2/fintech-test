@@ -1,7 +1,7 @@
 from app.db.utils.enums import ApplicationStatus
 from app.domain.workflows.countries.co import CO_TRANSITIONS
 from app.domain.workflows.countries.mx import MX_TRANSITIONS
-from backend.app.domain.workflows.countries.base import CountryTransitions
+from app.domain.workflows.countries.base import CountryTransitions
 
 
 TRANSITIONS_BY_COUNTRY: dict[str, CountryTransitions] = {

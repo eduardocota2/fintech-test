@@ -17,6 +17,18 @@ services:
       timeout: 5s
       retries: 12
 
+  redis:
+    image: redis:7-alpine
+    container_name: fintech_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
   migrate:
     build:
       context: ./backend
@@ -38,6 +50,8 @@ services:
     environment:
       APP_NAME: ${APP_NAME:-Fintech Backend}
       APP_VERSION: ${APP_VERSION:-1.0.0}
+      APP_ENV: ${APP_ENV:-development}
+      ENABLE_DEBUG_DEBT_HEADER: ${ENABLE_DEBUG_DEBT_HEADER:-true}
       API_V1_PREFIX: ${API_V1_PREFIX:-/api/v1}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-env}
       JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
@@ -47,11 +61,15 @@ services:
       SSE_POLL_SECONDS: ${SSE_POLL_SECONDS:-1.0}
       DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/fintech
       WEBHOOK_TARGET_URL: http://api:8000/api/v1/webhooks/mock-receiver
+      REDIS_URL: redis://redis:6379/0
+      APPLICATIONS_LIST_CACHE_TTL_SECONDS: ${APPLICATIONS_LIST_CACHE_TTL_SECONDS:-30}
     command: ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
     ports:
       - "${API_PORT:-8001}:8000"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
@@ -64,6 +82,8 @@ services:
     environment:
       APP_NAME: ${APP_NAME:-Fintech Backend}
       APP_VERSION: ${APP_VERSION:-1.0.0}
+      APP_ENV: ${APP_ENV:-development}
+      ENABLE_DEBUG_DEBT_HEADER: ${ENABLE_DEBUG_DEBT_HEADER:-true}
       API_V1_PREFIX: ${API_V1_PREFIX:-/api/v1}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-env}
       JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
@@ -71,12 +91,16 @@ services:
       WEBHOOK_TIMEOUT_SECONDS: ${WEBHOOK_TIMEOUT_SECONDS:-5.0}
       WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-1.0}
       SSE_POLL_SECONDS: ${SSE_POLL_SECONDS:-1.0}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      APPLICATIONS_LIST_CACHE_TTL_SECONDS: ${APPLICATIONS_LIST_CACHE_TTL_SECONDS:-30}
       DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/fintech
       WEBHOOK_TARGET_URL: http://api:8000/api/v1/webhooks/mock-receiver
     command: ["python", "-m", "app.workers.loan_worker"]
     restart: unless-stopped
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
