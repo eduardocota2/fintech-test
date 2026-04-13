@@ -185,12 +185,12 @@ flowchart TB
     WK --> DB
     WK --> RD
     
-    style Client fill:#e3f2fd
-    style API fill:#fff3e0
-    style Services fill:#e8f5e9
-    style Domain fill:#fce4ec
-    style Infra fill:#f3e5f5
-    style Data fill:#e0f2f1
+    style Client fill:#071124
+    style API fill:#120c06
+    style Services fill:#061209
+    style Domain fill:#3b0e1e
+    style Infra fill:#0c0612
+    style Data fill:#011c07
 ```
 
 ### Patrones Implementados
