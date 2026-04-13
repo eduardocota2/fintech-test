@@ -112,6 +112,87 @@ make deploy-k8s   # Desplegar en Kubernetes
 └─────────────────────────────────────────┘
 ```
 
+### Diagrama de componentes
+
+```mermaid
+flowchart TB
+    subgraph Client["🖥️ CLIENTE"]
+        C1[Login View]
+        C2[Applications List]
+        C3[Application Detail]
+        C4[Create Application Form]
+    end
+    
+    subgraph API["⚙️ API LAYER"]
+        R1[auth.py]
+        R2[applications.py]
+        R3[events.py]
+        R4[webhooks.py]
+    end
+    
+    subgraph Services["🧠 SERVICES"]
+        S1[AuthService]
+        S2[ApplicationService]
+        S3[JobWorkerService]
+        S4[EventStreamService]
+    end
+    
+    subgraph Domain["🌍 DOMAIN"]
+        D1[MX Rules]
+        D2[CO Rules]
+        D3[Banking Provider]
+        D4[Workflow Engine]
+    end
+    
+    subgraph Infra["🗄️ INFRASTRUCTURE (DB)"]
+        I1[Unit of Work]
+        I2[Loan Repository]
+        I3[User Repository]
+        I4[Cache Service]
+    end
+    
+    subgraph Data["💾 DATA"]
+        DB[(PostgreSQL)]
+        RD[(Redis)]
+        WK[Worker Process]
+    end
+    
+    C1 --> R1
+    C2 --> R2
+    C3 --> R2
+    C4 --> R2
+    
+    R1 --> S1
+    R2 --> S2
+    R3 --> S4
+    R4 --> S2
+    
+    S1 --> I3
+    S2 --> D1
+    S2 --> D2
+    S2 --> D3
+    S2 --> D4
+    S2 --> I1
+    S3 --> I1
+    
+    I1 --> I2
+    I1 --> I3
+    I2 --> DB
+    I3 --> DB
+    I4 --> RD
+    
+    S2 --> I4
+    WK --> DB
+    WK --> RD
+    
+    style Client fill:#e3f2fd
+    style API fill:#fff3e0
+    style Services fill:#e8f5e9
+    style Domain fill:#fce4ec
+    style Infra fill:#f3e5f5
+    style Data fill:#e0f2f1
+```
+
 ### Patrones Implementados
 
 - **Repository Pattern**: Un repositorio por entidad
