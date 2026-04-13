@@ -116,42 +116,42 @@ make deploy-k8s   # Desplegar en Kubernetes
 
 ```mermaid
 flowchart TB
-    subgraph Client["🖥️ CLIENTE"]
+    subgraph Client["CLIENTE"]
         C1[Login View]
         C2[Applications List]
         C3[Application Detail]
         C4[Create Application Form]
     end
     
-    subgraph API["⚙️ API LAYER"]
+    subgraph API["API LAYER"]
         R1[auth.py]
         R2[applications.py]
         R3[events.py]
         R4[webhooks.py]
     end
     
-    subgraph Services["🧠 SERVICES"]
+    subgraph Services["SERVICES"]
         S1[AuthService]
         S2[ApplicationService]
         S3[JobWorkerService]
         S4[EventStreamService]
     end
     
-    subgraph Domain["🌍 DOMAIN"]
+    subgraph Domain["DOMAIN"]
         D1[MX Rules]
         D2[CO Rules]
         D3[Banking Provider]
         D4[Workflow Engine]
     end
     
-    subgraph Infra["🗄️ INFRASTRUCTURE (DB)"]
+    subgraph Infra["INFRASTRUCTURE (DB)"]
         I1[Unit of Work]
         I2[Loan Repository]
         I3[User Repository]
         I4[Cache Service]
     end
     
-    subgraph Data["💾 DATA"]
+    subgraph Data["DATA"]
         DB[(PostgreSQL)]
         RD[(Redis)]
         WK[Worker Process]
